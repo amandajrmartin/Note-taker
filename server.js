@@ -1,7 +1,11 @@
 const express = require('express');
 const path = require('path');
 const api = require('./routes/index.js');
+const fs = require('fs')
 // const api = require('./routes');
+
+// Why do we NOT wnat to bring in our dataset when the APP is LOADED(?)
+// const db = require('./db/db.json');
 
 const PORT = process.env.PORT || 3001;  // 8080 3000 300q 5000 5500
 const app = express();  // this line CREATE or INITALIZES our API SERVER 
@@ -22,83 +26,83 @@ app.get('/notes', function (request, response) {
     response.sendFile(path.join(__dirname, './public/notes.html'))
 })
 
-
-// Read in the saved data --> fs.readFile()  db.json 
-
-// we may have to conver the JSON data into JavaScript data to manipulate it
-
-
-// we NEED TO SEND that data BACK in JSON FORMAT
-app.post('/api/notes', (req, res) => {
-    const newNote = req.body;
-    newNote.id = uuidv4(); // Assign a unique id to the new note
-
-    fs.readFile(dbPath, 'utf8', (err, data) => {
+app.get('/api/notes', function (request, response) {
+    fs.readFile("./db/db.json", 'utf8', (err, data) => {
         if (err) {
-            console.error('Error reading db.json:', err);
-            return res.status(500).json({ error: 'Failed to read notes' });
+            console.error(err);
+            return;
         }
-
-        let notes;
-        try {
-            notes = JSON.parse(data);
-        } catch (parseErr) {
-            console.error('Error parsing db.json:', parseErr);
-            return res.status(500).json({ error: 'Failed to parse notes' });
-        }
-
-        notes.push(newNote);
-
-        fs.writeFile(dbPath, JSON.stringify(notes, null, 2), (writeErr) => {
-            if (writeErr) {
-                console.error('Error writing to db.json:', writeErr);
-                return res.status(500).json({ error: 'Failed to save note' });
-            }
-
-            res.json(newNote);
-        });
+        console.log(data);
+        response.json(JSON.parse(data));
     });
-});
 
-app.delete('/api/notes/:id', (req, res) => {
-    const noteId = req.params.id;
+    // response.sendFile(path.join(__dirname, './public/pages/notes.html'))
 
-    fs.readFile(dbPath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading db.json:', err);
-            return res.status(500).json({ error: 'Failed to read notes' });
-        }
+    // Read in the saved data --> fs.readFile()  db.json 
 
-        let notes;
-        try {
-            notes = JSON.parse(data);
-        } catch (parseErr) {
-            console.error('Error parsing db.json:', parseErr);
-            return res.status(500).json({ error: 'Failed to parse notes' });
-        }
+    // we may have to convert the JSON data into JavaScript data to manipulate it
 
-        const filteredNotes = notes.filter(note => note.id !== noteId);
 
-        fs.writeFile(dbPath, JSON.stringify(filteredNotes, null, 2), (writeErr) => {
-            if (writeErr) {
-                console.error('Error writing to db.json:', writeErr);
-                return res.status(500).json({ error: 'Failed to delete note' });
-            }
-
-            res.json({ message: 'Note deleted successfully' });
-        });
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+    // we NEED TO SEND that data BACK in JSON FORMAT
+})
 
 app.post('/api/notes', function (req, res) {
-    console.log("Incoming Reaques Body data: ", req.body)
+    console.log("Incoming Reaquest Body data: ", req.body);
+    console.log("Incoming Reaquest data TYPE: ", typeof req.body);
+    // READ(GRAB) in the current SAVED DATASET
+    fs.readFile("./db/db.json", 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        console.log(data);
+        console.log(typeof data);
+        // COnvert the JSON data to a more usable format (JS)
+        let jsData = JSON.parse(data);
+        console.log("data: ", jsData);
+        console.log("data: ", typeof jsData);   // ARRAY (object)
+
+        // JSON --> { "key" : "value" }
+        // stringify(jsDataType)  --> this converts and JSobj into JSON
+        // parse() --> this converts the JSON data into JavaScript (object)
+
+        // ADD the NEW DATA to my dataset(?)
+        jsData.push(req.body)
+
+        console.log("data: ", jsData);
+        //console.log("data: ", typeof jsData);   // ARRAY (object)
+
+        // WE need to WRITE the NEW DATASET to file
+        fs.writeFile("./db/db.json", JSON.stringify(jsData), function (err, data) {
+            if (err) {
+                console.log("Error: ", err);
+            }
+            console.log("Data Written Successfuly");
+            res.json(data);
+        })
+        // response.json(JSON.parse(data));
+    });
+
+    // add to the db.json file 
+
+    // fs.writeFile()
+
 })
 
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+app.delete('/api/notes/:id', (req, res) => {
+    const noteId = req.params.id;
+    //remove note from array 
+    //save new array from file
+    //return it
+    //res.____ activity has completed 
+})
+
+app.get('*', function (request, response) {
+
+    response.sendFile(path.join(__dirname, './public/index.html'))
+})
+
+app.listen(PORT, () =>
+    console.log(`App listening at http://localhost:${PORT}`)
+);
